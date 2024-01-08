@@ -45,6 +45,11 @@ class Initialize:
         return self.__date_interval_list
 
     @staticmethod
+    def __write_log_to_cmd_and_dir(data: str):
+        logging.info(data)
+        print(data)
+
+    @staticmethod
     def __create_batches(lst, batch_size):
         for i in range(0, len(lst), batch_size):
             yield lst[i:i + batch_size]
@@ -54,49 +59,49 @@ class Initialize:
         try:
             with pyodbc.connect(
                     f"DRIVER={self.__odbc_driver};SERVER={credentials[0]};DATABASE={credentials[3]};UID={credentials[1]};PWD={credentials[2]}") as db_conn:
-                logging.info(f"{credentials[0]} server connection established")
+                self.__write_log_to_cmd_and_dir(f"{credentials[0]} server connection established")
                 with db_conn.cursor() as cursor:
-                    logging.info(f"{credentials[0]} cursor opened")
+                    self.__write_log_to_cmd_and_dir(f"{credentials[0]} cursor opened")
                     if isinstance(query, str):
                         cursor.execute(query)
                         db_conn.commit()
-                        logging.info("non-parameterized query completed")
+                        self.__write_log_to_cmd_and_dir("non-parameterized query completed")
                         return
                     for single_query in query:
                         query_index += 1
-                        logging.info(f"Query {query_index} processing")
+                        self.__write_log_to_cmd_and_dir(f"Query {query_index} processing")
                         cursor.execute(single_query, params)
                         rows = cursor.fetchall()
                         for row in rows:
                             result_list.append(row)
-                        logging.info(f"Query {query_index} completed")
+                        self.__write_log_to_cmd_and_dir(f"Query {query_index} completed")
                     db_conn.commit()
         except Exception as exp:
             logging.error(exp)
             return
-        logging.info(f"{credentials[0]} connection closed")
+        self.__write_log_to_cmd_and_dir(f"{credentials[0]} connection closed")
         return result_list
 
     def __execute_insert_query(self, query: str, insert_list: list, credentials: tuple):
         try:
             with pyodbc.connect(
                     f"DRIVER={self.__odbc_driver};SERVER={credentials[0]};DATABASE={credentials[3]};UID={credentials[1]};PWD={credentials[2]}") as db_conn:
-                logging.info(f"{credentials[0]} server connection established")
+                self.__write_log_to_cmd_and_dir(f"{credentials[0]} server connection established")
                 with db_conn.cursor() as cursor:
-                    logging.info(f"{credentials[0]} cursor opened")
+                    self.__write_log_to_cmd_and_dir(f"{credentials[0]} cursor opened")
                     cursor.fast_executemany = True
                     cursor.executemany(query, insert_list)
                     db_conn.commit()
-                    logging.info("Batch committed successfully")
+                    self.__write_log_to_cmd_and_dir("Batch committed successfully")
         except Exception as exp:
             logging.error(exp)
             return
-        logging.info(f"{credentials[0]} connection closed")
+        self.__write_log_to_cmd_and_dir(f"{credentials[0]} connection closed")
 
     def __initialize_date_interval_list(self) -> list:
         date_interval_list = []
         datebeg_from = self.__current_date - 2
-        logging.info(f"date_interval_list processing")
+        self.__write_log_to_cmd_and_dir(f"date_interval_list processing")
         for year in range(datebeg_from, self.__current_date):
             for month in range(1, 13):
                 str_month = month if month // 10 >= 1 else "0" + str(month)
@@ -108,7 +113,7 @@ class Initialize:
                     date_interval_list.append([f"{year}{str_month}01", f"{year}{str_month}29"])
                 else:
                     date_interval_list.append([f"{year}{str_month}01", f"{year}{str_month}28"])
-        logging.info(f"date_interval_list processing completed")
+        self.__write_log_to_cmd_and_dir(f"date_interval_list processing completed")
         return date_interval_list
 
     def __is_db_connection_established(self) -> bool:
@@ -118,10 +123,10 @@ class Initialize:
                         f"DRIVER={self.__odbc_driver};SERVER={credentials[0]};DATABASE={credentials[3]};UID={credentials[1]};PWD={credentials[2]}", timeout=5) as db_conn:
                     with db_conn.cursor() as cursor:
                         cursor.execute("SELECT 1")
-                        logging.info(f"{credentials[0]} db connection established")
+                        self.__write_log_to_cmd_and_dir(f"{credentials[0]} db connection established")
                         break
             except Exception as e:
-                logging.error(f"\n{credentials[0]} db no connection" + "\n Tip: turn on vpn or check credentials")
+                self.__write_log_to_cmd_and_dir(f"\n{credentials[0]} db no connection" + "\n Tip: turn on vpn or check credentials")
                 logging.error(e)
                 return False
         return True
@@ -129,7 +134,8 @@ class Initialize:
     def fetch_kompas_data(self, credentials: tuple):
         queries = []
         for date_interval in self.__date_interval_list:
-            logging.info(f"Formation of a query {date_interval}")
+            self.__write_log_to_cmd_and_dir(
+                f"Formation of a query {date_interval}")
             queries.append(f"""
                 SET NOCOUNT ON;
                 EXEC	[dbo].[up_claim_info_KOMPAS]
@@ -146,7 +152,8 @@ class Initialize:
         queries = []
         length = len(self.__date_interval_list)
         for index in range(length - 1, length):
-            logging.info(f"Formation of a query {self.__date_interval_list[index]}")
+            self.__write_log_to_cmd_and_dir(
+                f"Formation of a query {self.__date_interval_list[index]}")
             queries.append(f"""
                 SET NOCOUNT ON;
                 EXEC	[dbo].[up_claim_info_KOMPAS]
@@ -243,7 +250,7 @@ class Initialize:
         is_db_connectable = self.__is_db_connection_established()
         if not is_db_connectable:
             return
-        logging.info("Script activated")
+        self.__write_log_to_cmd_and_dir("Script activated")
         self.fetch_kompas_data(credentials=KOMPAS_DB_CREDENTIALS)
         self.__clear_temp_table()
         self.__insert_data_to_1c_db()
@@ -257,6 +264,8 @@ class Initialize:
 if __name__ == '__main__':
     root_path = return_root_path()
     log_file_name = datetime.now().strftime("logfile_%H_%M_%S_%d_%m_%Y.log")
+    if not os.path.exists(os.path.join(root_path, "logs")):
+        os.mkdir(os.path.join(root_path, "logs"))
     logs_path = os.path.join(root_path, "logs", log_file_name)
 
     logging.basicConfig(
