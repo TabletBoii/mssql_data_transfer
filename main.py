@@ -244,7 +244,11 @@ class Initialize:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-        self.__execute_insert_query(query=query, insert_list=self.__kompas_data, credentials=ONE_C_DB_CREDENTIALS)
+        kompas_data_batches = self.__create_batches(self.__kompas_data, len(self.__kompas_data) // 10)
+        print("self.__kompas_data len: ", len(self.__kompas_data))
+        for kompas_data_batch in kompas_data_batches:
+            print("kompas_data_batch len: ", len(kompas_data_batch))
+            self.__execute_insert_query(query=query, insert_list=kompas_data_batch, credentials=ONE_C_DB_CREDENTIALS)
 
     def run(self):
         is_db_connectable = self.__is_db_connection_established()
@@ -256,9 +260,13 @@ class Initialize:
         self.__insert_data_to_1c_db()
 
     def test(self):
-        # self.__test_fetch_kompas_data(credentials=KOMPAS_DB_CREDENTIALS)
+        is_db_connectable = self.__is_db_connection_established()
+        if not is_db_connectable:
+            return
+        self.__write_log_to_cmd_and_dir("Script activated")
+        self.__test_fetch_kompas_data(credentials=KOMPAS_DB_CREDENTIALS)
         self.__clear_temp_table()
-        # self.__insert_data_to_1c_db()
+        self.__insert_data_to_1c_db()
 
 
 if __name__ == '__main__':
