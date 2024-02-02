@@ -157,8 +157,8 @@ class Initialize:
             queries.append(f"""
                 SET NOCOUNT ON;
                 EXEC	[dbo].[up_claim_info_KOMPAS]
-                @cdate_from = N'20230101',
-                @cdate_till = N'20230105'
+                @cdate_from = N'20220406',
+                @cdate_till = N'20220407'
             """)
         #     @cdate_from = N'{self.__date_interval_list[index][0]}',
         #                 @cdate_till = N'{self.__date_interval_list[index][1]}'
