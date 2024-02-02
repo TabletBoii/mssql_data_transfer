@@ -28,6 +28,7 @@ from utils import return_root_path
 class Initialize:
     def __init__(self):
         self.__kompas_data = []
+        self.__kompas_data_length = 0
         self.__current_date = int(datetime.now().strftime("%Y"))
         self.__date_interval_list = self.__initialize_date_interval_list()
         self.__odbc_driver = "ODBC Driver 17 for SQL Server"
@@ -45,7 +46,7 @@ class Initialize:
         return self.__date_interval_list
 
     @staticmethod
-    def __write_log_to_cmd_and_dir(data: str):
+    def __write_log_to_cmd_and_dir(data: str | Exception):
         logging.info(data)
         print(data)
 
@@ -58,7 +59,7 @@ class Initialize:
         query_index = 0
         try:
             with pyodbc.connect(
-                    f"DRIVER={self.__odbc_driver};SERVER={credentials[0]};DATABASE={credentials[3]};UID={credentials[1]};PWD={credentials[2]}") as db_conn:
+                    f"DRIVER={self.__odbc_driver};SERVER={credentials[0]};DATABASE={credentials[3]};UID={credentials[1]};PWD={credentials[2]};UseFMTONLY=Yes") as db_conn:
                 self.__write_log_to_cmd_and_dir(f"{credentials[0]} server connection established")
                 with db_conn.cursor() as cursor:
                     self.__write_log_to_cmd_and_dir(f"{credentials[0]} cursor opened")
@@ -77,7 +78,7 @@ class Initialize:
                         self.__write_log_to_cmd_and_dir(f"Query {query_index} completed")
                     db_conn.commit()
         except Exception as exp:
-            logging.error(exp)
+            self.__write_log_to_cmd_and_dir(exp)
             return
         self.__write_log_to_cmd_and_dir(f"{credentials[0]} connection closed")
         return result_list
@@ -94,7 +95,7 @@ class Initialize:
                     db_conn.commit()
                     self.__write_log_to_cmd_and_dir("Batch committed successfully")
         except Exception as exp:
-            logging.error(exp)
+            self.__write_log_to_cmd_and_dir(exp)
             return
         self.__write_log_to_cmd_and_dir(f"{credentials[0]} connection closed")
 
@@ -127,11 +128,10 @@ class Initialize:
                         break
             except Exception as e:
                 self.__write_log_to_cmd_and_dir(f"\n{credentials[0]} db no connection" + "\n Tip: turn on vpn or check credentials")
-                logging.error(e)
                 return False
         return True
 
-    def fetch_kompas_data(self, credentials: tuple):
+    def __fetch_kompas_data(self, credentials: tuple):
         queries = []
         for date_interval in self.__date_interval_list:
             self.__write_log_to_cmd_and_dir(
@@ -139,8 +139,8 @@ class Initialize:
             queries.append(f"""
                 SET NOCOUNT ON;
                 EXEC	[dbo].[up_claim_info_KOMPAS]
-                @datebeg_from = N'{date_interval[0]}',
-                @datebeg_till = N'{date_interval[1]}'
+                @cdate_from = N'{date_interval[0]}',
+                @cdate_till = N'{date_interval[1]}'
             """)
         self.__execute_query(
             query=queries,
@@ -157,9 +157,11 @@ class Initialize:
             queries.append(f"""
                 SET NOCOUNT ON;
                 EXEC	[dbo].[up_claim_info_KOMPAS]
-                @datebeg_from = N'{self.__date_interval_list[index][0]}',
-                @datebeg_till = N'{self.__date_interval_list[index][1]}'
+                @cdate_from = N'20230101',
+                @cdate_till = N'20230105'
             """)
+        #     @cdate_from = N'{self.__date_interval_list[index][0]}',
+        #                 @cdate_till = N'{self.__date_interval_list[index][1]}'
         self.__execute_query(
             query=queries,
             result_list=self.__kompas_data,
@@ -191,9 +193,10 @@ class Initialize:
             partner$phones1,
             partner$phones2,
             partner$faxes,
-            partner$faxes1,      
+            partner$faxes1,
             partner$email,
-            partner$email1,  
+            partner$email1,
+            partner$town$inc,
             partner$town$name,
             tour$name,
             claim$cdate,
@@ -202,10 +205,32 @@ class Initialize:
             claim$dateend,
             claim$nights,
             claim$confirmeddate,
+            claim$net,
+            claim$anet,
+            claim$paidnet,
+            claim$debtnet,
             claim$cost,
-            claim$amount,
-            claim$paid, 
-            claim$debt,
+            claim$paidcost,
+            claim$debtcost,
+            claim$clientcost,
+            claim$clientdebt,
+            claim$mediatorsum,
+            claim$fixcommiss,
+            claim$commiss,
+            claim$earlycommiss,
+            claim$discount,
+            claim$discommiss,
+            claim$supplement,
+            claim$suppcommiss,
+            claim$common_commiss,
+            claim$total_commiss,
+            claim$tax,
+            claim$amount_to_pay,
+            claim$kickback,
+            claim$profit,
+            claim$aprofit,
+            claim$cost_with_commiss,
+            claim$precision,
             claim$currency$alias,
             claim$note,
             claim$comment,
@@ -222,7 +247,6 @@ class Initialize:
             pax,
             user$name,
             commission$percent,
-            total_commiss,
             ctype$inc,
             ctype$name,
             state$inc,
@@ -236,15 +260,26 @@ class Initialize:
             departure$town$name,
             departure$state$inc,
             departure$state$name,
+            tourtype$inc,
+            tourtype$name,
+            ptype$inc,
+            ptype$name,
             owner$inc,
             owner$name,
             owner$lname,
             owner$officialname
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?)"""
         kompas_data_batches = self.__create_batches(self.__kompas_data, len(self.__kompas_data) // 10)
+
         print("self.__kompas_data len: ", len(self.__kompas_data))
         for kompas_data_batch in kompas_data_batches:
             print("kompas_data_batch len: ", len(kompas_data_batch))
@@ -255,7 +290,7 @@ class Initialize:
         if not is_db_connectable:
             return
         self.__write_log_to_cmd_and_dir("Script activated")
-        self.fetch_kompas_data(credentials=KOMPAS_DB_CREDENTIALS)
+        self.__fetch_kompas_data(credentials=KOMPAS_DB_CREDENTIALS)
         self.__clear_temp_table()
         self.__insert_data_to_1c_db()
 
