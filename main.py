@@ -149,19 +149,13 @@ class Initialize:
         )
 
     def __test_fetch_kompas_data(self, credentials: tuple):
-        queries = []
-        length = len(self.__date_interval_list)
-        for index in range(length - 1, length):
-            self.__write_log_to_cmd_and_dir(
-                f"Formation of a query {self.__date_interval_list[index]}")
-            queries.append(f"""
+        queries = [f"""
                 SET NOCOUNT ON;
                 EXEC	[dbo].[up_claim_info_KOMPAS]
-                @cdate_from = N'20220406',
-                @cdate_till = N'20220407'
-            """)
-        #     @cdate_from = N'{self.__date_interval_list[index][0]}',
-        #                 @cdate_till = N'{self.__date_interval_list[index][1]}'
+                @cdate_from = N'20230601',
+                @cdate_till = N'20230630'
+            """]
+
         self.__execute_query(
             query=queries,
             result_list=self.__kompas_data,
@@ -283,10 +277,9 @@ class Initialize:
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?)"""
         kompas_data_batches = self.__create_batches(self.__kompas_data, len(self.__kompas_data) // 10)
-
-        print("self.__kompas_data len: ", len(self.__kompas_data))
+        self.__write_log_to_cmd_and_dir(f"self.__kompas_data len: {len(self.__kompas_data)}")
         for kompas_data_batch in kompas_data_batches:
-            print("kompas_data_batch len: ", len(kompas_data_batch))
+            self.__write_log_to_cmd_and_dir(f"kompas_data_batch len: {len(kompas_data_batch)}")
             self.__execute_insert_query(query=query, insert_list=kompas_data_batch, credentials=ONE_C_DB_CREDENTIALS)
 
     def run(self):
@@ -353,5 +346,5 @@ if __name__ == '__main__':
     )
 
     initialize_instance = Initialize()
-    initialize_instance.run()
-    # initialize_instance.test()
+    # initialize_instance.run()
+    initialize_instance.test()
