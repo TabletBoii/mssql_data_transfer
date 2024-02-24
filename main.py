@@ -196,9 +196,11 @@ class Initialize:
             partner$faxes1,
             partner$email,
             partner$email1,
+            partner$state,
             partner$town$inc,
             partner$town$name,
             tour$name,
+            claim$rdate,
             claim$cdate,
             claim$cdatetime,
             claim$datebeg,
@@ -267,7 +269,8 @@ class Initialize:
             owner$inc,
             owner$name,
             owner$lname,
-            owner$officialname
+            owner$officialname,
+            freight$partner
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -277,7 +280,8 @@ class Initialize:
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?)"""
         kompas_data_batches = self.__create_batches(self.__kompas_data, len(self.__kompas_data) // 10)
 
         print("self.__kompas_data len: ", len(self.__kompas_data))
