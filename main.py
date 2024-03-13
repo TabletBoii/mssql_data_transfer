@@ -349,5 +349,5 @@ if __name__ == '__main__':
     )
 
     initialize_instance = Initialize()
-    # initialize_instance.run()
-    initialize_instance.test()
+    initialize_instance.run()
+    # initialize_instance.test()
