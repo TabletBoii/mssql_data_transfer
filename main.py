@@ -264,7 +264,10 @@ class Initialize:
             owner$name,
             owner$lname,
             owner$officialname,
-            freight$partner
+            freight$partner,
+            hotel$order_partner,
+            transfer$partner,
+            insure$partner
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -275,7 +278,7 @@ class Initialize:
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?)"""
+        ?, ?, ?, ?)"""
         kompas_data_batches = self.__create_batches(self.__kompas_data, len(self.__kompas_data) // 10)
         self.__write_log_to_cmd_and_dir(f"self.__kompas_data len: {len(self.__kompas_data)}")
         for kompas_data_batch in kompas_data_batches:
