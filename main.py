@@ -6,7 +6,7 @@ from datetime import datetime
 from config import get_data
 from dotenv import load_dotenv
 from utils import return_root_path
-
+from exceptions.sql_exceptions import PrimaryKeyViolationError
 # 2000 - вис
 
 """
@@ -71,11 +71,15 @@ class Initialize:
                     for single_query in query:
                         query_index += 1
                         self.__write_log_to_cmd_and_dir(f"Query {query_index} processing")
-                        cursor.execute(single_query, params)
-                        rows = cursor.fetchall()
-                        for row in rows:
-                            result_list.append(row)
-                        self.__write_log_to_cmd_and_dir(f"Query {query_index} completed")
+                        try:
+                            cursor.execute(single_query, params)
+                            rows = cursor.fetchall()
+                            for row in rows:
+                                result_list.append(row)
+                            self.__write_log_to_cmd_and_dir(f"Query {query_index} completed")
+                        except PrimaryKeyViolationError as e:
+                            self.__write_log_to_cmd_and_dir(f"Primary Key Violation error. Skipping...")
+                            continue
                     db_conn.commit()
         except Exception as exp:
             self.__write_log_to_cmd_and_dir(exp)
